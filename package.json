@@ -1,0 +1,37 @@
+{
+  "name": "cache-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "set ENV=prod & node ./dist/server.js",
+    "build": "tsc",
+    "dev": "set ENV=dev & ts-node-dev --respawn ./src/server.ts",
+    "db:push": "dotenv -e .env.dev -- prisma db push",
+    "db:migrate": "dotenv -e .env.dev -- prisma migrate dev",
+    "db:generate-client": "dotenv -e .env.dev -- prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.17.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "1.4.5-lts.1",
+    "prisma": "^5.17.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "@types/multer": "^1.4.11",
+    "@types/node": "^22.0.2",
+    "dotenv-cli": "^7.4.2"
+  }
+}
