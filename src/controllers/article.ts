@@ -1,7 +1,8 @@
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../utils/prisma";
 import multer from "multer";
-import { redis } from "../utils/redis";
+import { Article } from "@prisma/client";
+import { cache } from "../middlewares/cache";
 
 // =============================================================================
 // Setup Multer for file upload
@@ -17,44 +18,31 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // =============================================================================
-const getArticles = async (req: Request, res: Response) => {
-  // Get ?author=xyz from query string
-  const { author } = req.query;
+const getArticles = [
+  cache(5), // Cache for 5 seconds
+  async (req: Request, res: Response) => {
+    // Get ?author=xyz from query string
+    const { author } = req.query;
 
-  if (author) {
-    console.log("Using Cache");
+    let articles: Article[] = [];
 
-    // If user requests for specific author by providing author id in the query
-    const cachedArticles = await redis.get(`articles:${author}`);
+    if (author) {
+      // Query the database
+      articles = await prisma.article.findMany({
+        where: { userId: Number(author) },
+      });
 
-    // If cache found, return to user
-    if (cachedArticles) {
-      console.log("Cache Hit");
-      return res.json(JSON.parse(cachedArticles));
+      // ⚠️Delay for 2 seconds
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    } else {
+      // If user requests for all articles, don't user cache
+      articles = await prisma.article.findMany();
     }
 
-    console.log("Cache Miss");
-
-    // No cache found, query the database
-    const articles = await prisma.article.findMany({
-      where: { userId: Number(author) },
-    });
-    // ⚠️Delay for 2 seconds
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Save the result in redis cache for 5 seconds
-    redis.set(`articles:${author}`, JSON.stringify(articles), "EX", 5);
-
-    return res.json(articles);
-  } else {
-    console.log("Ignore Cache");
-
-    // If user requests for all articles, don't user cache
-    const articles = await prisma.article.findMany();
-
-    return res.json(articles);
-  }
-};
+    // Must send with res.send because we overwrite res.send in the cache middleware
+    return res.send(articles);
+  },
+];
 
 // =============================================================================
 const getArticle = async (req: Request, res: Response) => {
